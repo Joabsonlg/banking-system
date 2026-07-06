@@ -58,7 +58,12 @@ public class Bank {
     //@ requires cpf != null && cpf.length() == 11;
     //@ ensures \result == null || \result.getCpf().equals(cpf);
     public /*@ pure @*/ Customer findCustomerByCpf(String cpf) {
-        for (Customer c : customers) {
+        /*@ loop_invariant 0 <= i && i <= customers.size();
+          @ loop_invariant (\forall int j; 0 <= j && j < i; !customers.get(j).getCpf().equals(cpf));
+          @ decreases customers.size() - i;
+          @*/
+        for (int i = 0; i < customers.size(); i++) {
+            Customer c = customers.get(i);
             if (c.getCpf().equals(cpf)) {
                 return c;
             }
@@ -74,7 +79,11 @@ public class Bank {
      */
     //@ requires accountNumber > 0;
     public /*@ pure @*/ Account findAccountByNumber(int accountNumber) {
-        for (Customer c : customers) {
+        /*@ loop_invariant 0 <= i && i <= customers.size();
+          @ decreases customers.size() - i;
+          @*/
+        for (int i = 0; i < customers.size(); i++) {
+            Customer c = customers.get(i);
             Account acc = c.getAccountByNumber(accountNumber);
             if (acc != null) {
                 return acc;

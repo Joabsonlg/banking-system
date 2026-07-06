@@ -58,8 +58,14 @@ public class Customer {
      * @param accountNumber The account number.
      * @return The account if found, or null otherwise.
      */
+    //@ requires accountNumber > 0;
     public /*@ pure @*/ Account getAccountByNumber(int accountNumber) {
-        for (Account acc : accounts) {
+        /*@ loop_invariant 0 <= i && i <= accounts.size();
+          @ loop_invariant (\forall int j; 0 <= j && j < i; accounts.get(j).getAccountNumber() != accountNumber);
+          @ decreases accounts.size() - i;
+          @*/
+        for (int i = 0; i < accounts.size(); i++) {
+            Account acc = accounts.get(i);
             if (acc.getAccountNumber() == accountNumber) {
                 return acc;
             }
