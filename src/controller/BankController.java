@@ -5,8 +5,6 @@ import model.Bank;
 import model.Customer;
 import view.ConsoleView;
 
-import java.util.List;
-
 /**
  * The controller that orchestrates the banking system flow.
  */
@@ -90,6 +88,11 @@ public class BankController {
     }
 
     private void registerCustomer() {
+        if (bank.getCustomerCount() >= Bank.MAX_CUSTOMERS) {
+            view.displayMessage("Error: Bank has reached its maximum customer capacity.");
+            return;
+        }
+
         String name = view.getStringInput("Enter customer name: ");
         String cpf = view.getStringInput("Enter customer CPF (11 digits): ");
         String password = view.getStringInput("Enter a password: ");
@@ -115,6 +118,11 @@ public class BankController {
     }
 
     private void openAccount() {
+        if (currentSession.getAccountCount() >= Customer.MAX_ACCOUNTS) {
+            view.displayMessage("Error: You have reached the maximum number of accounts (" + Customer.MAX_ACCOUNTS + ").");
+            return;
+        }
+
         Account account = new Account(nextAccountNumber++);
         currentSession.addAccount(account);
         view.displayMessage("Account created successfully! Your Account Number is: " + account.getAccountNumber());
@@ -202,14 +210,17 @@ public class BankController {
     }
 
     private void listAccounts() {
-        List<Account> accounts = currentSession.getAccounts();
-        if (accounts.isEmpty()) {
+        Account[] accounts = currentSession.getAccounts();
+        int count = currentSession.getAccountCount();
+        
+        if (count == 0) {
             view.displayMessage("You don't have any accounts yet.");
             return;
         }
         
         view.displayMessage("\n--- Your Accounts ---");
-        for (Account acc : accounts) {
+        for (int i = 0; i < count; i++) {
+            Account acc = accounts[i];
             view.displayMessage("Account Number: " + acc.getAccountNumber() + " | Balance: $" + acc.getBalance());
         }
         view.displayMessage("---------------------");

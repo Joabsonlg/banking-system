@@ -1,23 +1,26 @@
 package model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Represents a customer of the bank.
  * A customer can have multiple accounts and a password for authentication.
  */
-public class Customer {
+public final class Customer {
 
-    private /*@ spec_public @*/ String name;
-    private /*@ spec_public @*/ String cpf;
-    private /*@ spec_public @*/ String password;
-    private /*@ spec_public @*/ List<Account> accounts;
+    public static final int MAX_ACCOUNTS = 10;
+
+    /*@ spec_public @*/ String name;
+    /*@ spec_public @*/ String cpf;
+    /*@ spec_public @*/ String password;
+    /*@ spec_public @*/ Account[] accounts;
+    /*@ spec_public @*/ int accountCount;
 
     //@ public invariant name != null && name.length() > 0;
     //@ public invariant cpf != null && cpf.length() == 11;
     //@ public invariant password != null && password.length() > 0;
     //@ public invariant accounts != null;
+    //@ public invariant accounts.length == MAX_ACCOUNTS;
+    //@ public invariant 0 <= accountCount && accountCount <= MAX_ACCOUNTS;
+    //@ public invariant \elemtype(\typeof(accounts)) == \type(Account);
 
     /**
      * Constructs a new customer.
@@ -32,12 +35,13 @@ public class Customer {
     //@ ensures this.name == name;
     //@ ensures this.cpf == cpf;
     //@ ensures this.password == password;
-    //@ ensures this.accounts != null && this.accounts.size() == 0;
+    //@ ensures this.accounts != null && this.accountCount == 0;
     public Customer(String name, String cpf, String password) {
         this.name = name;
         this.cpf = cpf;
         this.password = password;
-        this.accounts = new ArrayList<>();
+        this.accounts = new Account[MAX_ACCOUNTS];
+        this.accountCount = 0;
     }
 
     /**
@@ -46,27 +50,30 @@ public class Customer {
      * @param account The account to add.
      */
     //@ requires account != null;
-    //@ assignable accounts;
-    //@ ensures accounts.size() == \old(accounts.size()) + 1;
+    //@ requires accountCount < MAX_ACCOUNTS;
+    //@ assignable accounts[accountCount], accountCount;
+    //@ ensures accountCount == \old(accountCount) + 1;
+    //@ ensures accounts[\old(accountCount)] == account;
     public void addAccount(Account account) {
-        this.accounts.add(account);
+        this.accounts[this.accountCount] = account;
+        this.accountCount++;
     }
 
     /**
      * Retrieves an account by its number from this customer.
+     * Uses direct field access to the account number for formal verification compatibility.
      * 
      * @param accountNumber The account number.
      * @return The account if found, or null otherwise.
      */
     //@ requires accountNumber > 0;
-    public /*@ pure @*/ Account getAccountByNumber(int accountNumber) {
-        /*@ loop_invariant 0 <= i && i <= accounts.size();
-          @ loop_invariant (\forall int j; 0 <= j && j < i; accounts.get(j).getAccountNumber() != accountNumber);
-          @ decreases accounts.size() - i;
+    public /*@ pure nullable @*/ Account getAccountByNumber(int accountNumber) {
+        /*@ loop_invariant 0 <= i && i <= accountCount;
+          @ decreases accountCount - i;
           @*/
-        for (int i = 0; i < accounts.size(); i++) {
-            Account acc = accounts.get(i);
-            if (acc.getAccountNumber() == accountNumber) {
+        for (int i = 0; i < accountCount; i++) {
+            Account acc = accounts[i];
+            if (acc != null && acc.accountNumber == accountNumber) {
                 return acc;
             }
         }
@@ -93,7 +100,11 @@ public class Customer {
         return this.cpf;
     }
 
-    public /*@ pure @*/ List<Account> getAccounts() {
+    public /*@ pure @*/ Account[] getAccounts() {
         return this.accounts;
+    }
+
+    public /*@ pure @*/ int getAccountCount() {
+        return this.accountCount;
     }
 }

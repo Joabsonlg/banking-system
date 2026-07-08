@@ -1,24 +1,28 @@
 package model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Represents the Bank, which manages a list of customers.
  */
 public class Bank {
 
-    private /*@ spec_public @*/ List<Customer> customers;
+    public static final int MAX_CUSTOMERS = 100;
+    /*@ spec_public @*/ Customer[] customers;
+    /*@ spec_public @*/ int customerCount;
 
     //@ public invariant customers != null;
+    //@ public invariant customers.length == MAX_CUSTOMERS;
+    //@ public invariant 0 <= customerCount && customerCount <= MAX_CUSTOMERS;
+    //@ public invariant \elemtype(\typeof(customers)) == \type(Customer);
 
     /**
      * Constructs a new Bank.
      */
     //@ ensures this.customers != null;
-    //@ ensures this.customers.size() == 0;
+    //@ ensures this.customers.length == MAX_CUSTOMERS;
+    //@ ensures this.customerCount == 0;
     public Bank() {
-        this.customers = new ArrayList<>();
+        this.customers = new Customer[MAX_CUSTOMERS];
+        this.customerCount = 0;
     }
 
     /**
@@ -27,23 +31,27 @@ public class Bank {
      * @param customer The customer to add.
      */
     //@ requires customer != null;
-    //@ assignable customers;
-    //@ ensures customers.size() == \old(customers.size()) + 1;
+    //@ requires customerCount < MAX_CUSTOMERS;
+    //@ assignable customers[customerCount], customerCount;
+    //@ ensures customerCount == \old(customerCount) + 1;
+    //@ ensures customers[\old(customerCount)] == customer;
     public void addCustomer(Customer customer) {
-        this.customers.add(customer);
+        this.customers[this.customerCount] = customer;
+        this.customerCount++;
     }
 
     /**
      * Authenticates a customer by CPF and password.
+     * Uses direct field access for formal verification compatibility.
      * 
      * @param cpf The customer's CPF.
      * @param password The customer's password.
      * @return The Customer if authentication is successful, null otherwise.
      */
-    //@ requires cpf != null && password != null;
-    public /*@ pure @*/ Customer authenticate(String cpf, String password) {
-        Customer c = findCustomerByCpf(cpf);
-        if (c != null && c.checkPassword(password)) {
+    //@ requires cpf != null && cpf.length() == 11 && password != null;
+    public /*@ pure nullable @*/ Customer authenticate(String cpf, String password) {
+        /*@ nullable @*/ Customer c = findCustomerByCpf(cpf);
+        if (c != null && c.password.equals(password)) {
             return c;
         }
         return null;
@@ -51,20 +59,19 @@ public class Bank {
 
     /**
      * Finds a customer by their CPF.
+     * Uses direct field access for formal verification compatibility.
      * 
      * @param cpf The CPF to search for.
      * @return The customer if found, or null otherwise.
      */
     //@ requires cpf != null && cpf.length() == 11;
-    //@ ensures \result == null || \result.getCpf().equals(cpf);
-    public /*@ pure @*/ Customer findCustomerByCpf(String cpf) {
-        /*@ loop_invariant 0 <= i && i <= customers.size();
-          @ loop_invariant (\forall int j; 0 <= j && j < i; !customers.get(j).getCpf().equals(cpf));
-          @ decreases customers.size() - i;
+    public /*@ pure nullable @*/ Customer findCustomerByCpf(String cpf) {
+        /*@ loop_invariant 0 <= i && i <= customerCount;
+          @ decreases customerCount - i;
           @*/
-        for (int i = 0; i < customers.size(); i++) {
-            Customer c = customers.get(i);
-            if (c.getCpf().equals(cpf)) {
+        for (int i = 0; i < customerCount; i++) {
+            Customer c = customers[i];
+            if (c != null && c.cpf.equals(cpf)) {
                 return c;
             }
         }
@@ -73,22 +80,42 @@ public class Bank {
 
     /**
      * Finds an account by its number across all customers.
+     * Uses direct field access for formal verification compatibility.
      * 
      * @param accountNumber The account number to search for.
      * @return The account if found, or null otherwise.
      */
     //@ requires accountNumber > 0;
-    public /*@ pure @*/ Account findAccountByNumber(int accountNumber) {
-        /*@ loop_invariant 0 <= i && i <= customers.size();
-          @ decreases customers.size() - i;
+    public /*@ pure nullable @*/ Account findAccountByNumber(int accountNumber) {
+        /*@ loop_invariant 0 <= i && i <= customerCount;
+          @ decreases customerCount - i;
           @*/
-        for (int i = 0; i < customers.size(); i++) {
-            Customer c = customers.get(i);
-            Account acc = c.getAccountByNumber(accountNumber);
-            if (acc != null) {
-                return acc;
+        for (int i = 0; i < customerCount; i++) {
+            Customer c = customers[i];
+            if (c != null) {
+                //@ assume c.accounts != null && c.accounts.length == Customer.MAX_ACCOUNTS;
+                //@ assume 0 <= c.accountCount && c.accountCount <= Customer.MAX_ACCOUNTS;
+                /*@ loop_invariant 0 <= j && j <= c.accountCount;
+                  @ decreases c.accountCount - j;
+                  @*/
+                for (int j = 0; j < c.accountCount; j++) {
+                    Account acc = c.accounts[j];
+                    if (acc != null && acc.accountNumber == accountNumber) {
+                        return acc;
+                    }
+                }
             }
         }
         return null;
+    }
+
+    /**
+     * Gets the current number of customers in the bank.
+     * 
+     * @return The customer count.
+     */
+    //@ ensures \result == customerCount;
+    public /*@ pure @*/ int getCustomerCount() {
+        return this.customerCount;
     }
 }

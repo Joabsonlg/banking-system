@@ -4,10 +4,10 @@ package model;
  * Represents a bank account for a customer.
  * It manages the balance and operations like deposit, withdraw, and transfer.
  */
-public class Account {
+public final class Account {
 
-    private /*@ spec_public @*/ int accountNumber;
-    private /*@ spec_public @*/ double balance;
+    /*@ spec_public @*/ int accountNumber;
+    /*@ spec_public @*/ double balance;
 
     //@ public invariant balance >= 0.0;
     //@ public invariant accountNumber > 0;
